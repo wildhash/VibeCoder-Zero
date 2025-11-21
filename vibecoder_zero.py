@@ -297,7 +297,7 @@ class VibeLog:
         self.last_state = state
         return state
     
-    def initialize(self, environment_state: str, analysis_data: Dict = None):
+    def initialize(self, environment_state: EnvironmentState, analysis_data: Dict = None):
         """Initialize a new vibe_log.md file."""
         from datetime import datetime
         
@@ -310,9 +310,10 @@ class VibeLog:
             "",
         ]
         
-        if environment_state == "empty":
+        if environment_state == EnvironmentState.EMPTY:
+            current_goal = "Establish foundational development environment for autonomous software generation."
+            content.append(current_goal)
             content.extend([
-                "Establish foundational development environment for autonomous software generation.",
                 "",
                 "## Master Plan",
                 "",
@@ -326,8 +327,9 @@ class VibeLog:
                 "",
             ])
         else:
+            current_goal = "Analyze codebase and identify optimization vectors for continuous improvement."
+            content.append(current_goal)
             content.extend([
-                "Analyze codebase and identify optimization vectors for continuous improvement.",
                 "",
                 "## Master Plan",
                 "",
@@ -345,10 +347,10 @@ class VibeLog:
             content.extend([
                 "## Environment Analysis",
                 "",
-                f"**State:** {environment_state.upper()}",
+                f"**State:** {environment_state.value.upper()}",
             ])
             
-            if environment_state == "populated":
+            if environment_state == EnvironmentState.POPULATED:
                 content.append(f"**Files:** {analysis_data.get('file_count', 0)}")
                 content.append(f"**Directories:** {analysis_data.get('dir_count', 0)}")
                 
@@ -381,7 +383,7 @@ class VibeLog:
         ])
         
         self.log_path.write_text("\n".join(content))
-        self.current_goal = content[6] if len(content) > 6 else None
+        self.current_goal = current_goal
     
     def update(self, new_goal: str = None, completed_step: str = None, blocker: str = None):
         """Update vibe_log.md with new information."""
@@ -394,9 +396,13 @@ class VibeLog:
         
         # Update timestamp
         if "*Last Updated:" in content:
-            old_timestamp = content[content.rfind("*Last Updated:"):]
-            new_timestamp = f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
-            content = content.replace(old_timestamp, new_timestamp)
+            # Find the timestamp line and replace just that line
+            lines = content.split("\n")
+            for i, line in enumerate(lines):
+                if "*Last Updated:" in line:
+                    lines[i] = f"*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
+                    break
+            content = "\n".join(lines)
         else:
             content += f"\n\n---\n*Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*"
         
@@ -545,7 +551,7 @@ class VibeCoder:
         # Initialize or update vibe_log.md
         if not self.vibe_log.exists():
             self.vibe_log.initialize(
-                environment_state=self.state.value,
+                environment_state=self.state,
                 analysis_data=self.analysis_results
             )
         else:
