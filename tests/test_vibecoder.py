@@ -16,7 +16,8 @@ from vibecoder_zero import (
     CodebaseAnalyzer,
     SelfImprovementPlanner,
     EnvironmentState,
-    DirectiveOutput
+    DirectiveOutput,
+    VibeLog
 )
 
 
@@ -204,6 +205,78 @@ def test_full_execution_populated_dir():
         assert vibecoder.analysis_results is not None
 
 
+def test_vibe_log_initialization():
+    """Test vibe_log.md is created if missing."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+        vibe_log_path = tmppath / "vibe_log.md"
+        
+        # Ensure no log exists initially
+        assert not vibe_log_path.exists()
+        
+        vibecoder = VibeCoder(work_dir=tmpdir)
+        vibecoder.execute()
+        
+        # Check that vibe_log.md was created
+        assert vibe_log_path.exists()
+        content = vibe_log_path.read_text()
+        assert "VibeCoder-Zero State Log" in content or "Master Plan" in content
+
+
+def test_vibe_log_persistence():
+    """Test vibe_log.md persists state across sessions."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+        vibe_log_path = tmppath / "vibe_log.md"
+        
+        # First session - create log
+        vibecoder1 = VibeCoder(work_dir=tmpdir)
+        vibecoder1.execute()
+        assert vibe_log_path.exists()
+        
+        # Second session - should read existing log
+        vibecoder2 = VibeCoder(work_dir=tmpdir)
+        vibecoder2.execute()
+        
+        # Verify the log was read and contains state
+        content = vibe_log_path.read_text()
+        assert "Current Goal" in content or "Completed Steps" in content
+
+
+def test_vibe_log_tracks_goals():
+    """Test vibe_log.md tracks current goals and completed steps."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+        vibe_log_path = tmppath / "vibe_log.md"
+        
+        vibecoder = VibeCoder(work_dir=tmpdir)
+        vibecoder.execute()
+        
+        content = vibe_log_path.read_text()
+        # Should contain state tracking sections
+        assert "Current Goal" in content
+        assert "Completed Steps" in content or "Active Blockers" in content
+
+
+def test_vibe_log_updates_on_populated_environment():
+    """Test vibe_log.md updates appropriately for populated environments."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmppath = Path(tmpdir)
+        vibe_log_path = tmppath / "vibe_log.md"
+        
+        # Create a populated environment
+        (tmppath / "main.py").write_text("print('hello')")
+        (tmppath / "test.py").write_text("assert True")
+        
+        vibecoder = VibeCoder(work_dir=tmpdir)
+        vibecoder.execute()
+        
+        assert vibe_log_path.exists()
+        content = vibe_log_path.read_text()
+        # Should reflect populated environment analysis
+        assert "State: POPULATED" in content or "populated" in content.lower()
+
+
 if __name__ == "__main__":
     # Simple test runner if pytest is not available
     import traceback
@@ -221,6 +294,10 @@ if __name__ == "__main__":
         test_optimization_vector_identification,
         test_full_execution_empty_dir,
         test_full_execution_populated_dir,
+        test_vibe_log_initialization,
+        test_vibe_log_persistence,
+        test_vibe_log_tracks_goals,
+        test_vibe_log_updates_on_populated_environment,
     ]
     
     passed = 0
