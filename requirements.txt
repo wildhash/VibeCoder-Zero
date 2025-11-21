@@ -1,0 +1,8 @@
+# VibeCoder-Zero Dependencies
+# No external dependencies required for core functionality
+# Python 3.7+ standard library only
+
+# Optional dependencies for enhanced functionality:
+# pytest>=7.0.0  # For testing
+# black>=22.0.0  # For code formatting
+# pylint>=2.0.0  # For code analysis
