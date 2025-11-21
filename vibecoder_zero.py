@@ -15,6 +15,55 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 
 
+# Constants for directory scanning and analysis
+IGNORE_DIRS = {'.git', '__pycache__', 'node_modules', '.venv', 'venv', 'dist', 'build'}
+
+LANGUAGE_EXTENSIONS = {
+    '.py': 'Python',
+    '.js': 'JavaScript',
+    '.ts': 'TypeScript',
+    '.java': 'Java',
+    '.cpp': 'C++',
+    '.c': 'C',
+    '.go': 'Go',
+    '.rs': 'Rust',
+    '.rb': 'Ruby',
+    '.php': 'PHP',
+    '.cs': 'C#',
+    '.swift': 'Swift',
+    '.kt': 'Kotlin',
+    '.scala': 'Scala',
+    '.sh': 'Shell',
+    '.html': 'HTML',
+    '.css': 'CSS',
+    '.sql': 'SQL',
+}
+
+FRAMEWORK_INDICATORS = {
+    'package.json': ['Node.js', 'npm'],
+    'requirements.txt': ['Python', 'pip'],
+    'Pipfile': ['Python', 'pipenv'],
+    'pyproject.toml': ['Python', 'Poetry'],
+    'Cargo.toml': ['Rust', 'Cargo'],
+    'go.mod': ['Go', 'Go Modules'],
+    'pom.xml': ['Java', 'Maven'],
+    'build.gradle': ['Java/Kotlin', 'Gradle'],
+    'Gemfile': ['Ruby', 'Bundler'],
+    'composer.json': ['PHP', 'Composer'],
+    'Makefile': ['Make'],
+    'CMakeLists.txt': ['CMake'],
+    'Dockerfile': ['Docker'],
+    'docker-compose.yml': ['Docker Compose'],
+    '.github/workflows': ['GitHub Actions'],
+}
+
+TEST_DIRS = ['tests', 'test', '__tests__', 'spec']
+
+CI_FILES = ['.github/workflows', '.gitlab-ci.yml', '.travis.yml', 'Jenkinsfile']
+
+EMPTINESS_IGNORED_FILES = {'.git', '.gitignore', 'readme.md', 'readme.txt', 'readme'}
+
+
 class EnvironmentState(Enum):
     """Represents the current state of the working environment."""
     EMPTY = "empty"
@@ -65,10 +114,8 @@ class CodebaseAnalyzer:
     
     def _scan_directory(self):
         """Scan directory structure."""
-        ignore_dirs = {'.git', '__pycache__', 'node_modules', '.venv', 'venv', 'dist', 'build'}
-        
         for item in self.root_path.rglob('*'):
-            if any(ignored in item.parts for ignored in ignore_dirs):
+            if any(ignored in item.parts for ignored in IGNORE_DIRS):
                 continue
             
             if item.is_file():
@@ -78,55 +125,16 @@ class CodebaseAnalyzer:
     
     def _detect_languages(self):
         """Detect programming languages in use."""
-        language_extensions = {
-            '.py': 'Python',
-            '.js': 'JavaScript',
-            '.ts': 'TypeScript',
-            '.java': 'Java',
-            '.cpp': 'C++',
-            '.c': 'C',
-            '.go': 'Go',
-            '.rs': 'Rust',
-            '.rb': 'Ruby',
-            '.php': 'PHP',
-            '.cs': 'C#',
-            '.swift': 'Swift',
-            '.kt': 'Kotlin',
-            '.scala': 'Scala',
-            '.sh': 'Shell',
-            '.html': 'HTML',
-            '.css': 'CSS',
-            '.sql': 'SQL',
-        }
-        
         for file_path in self.root_path.rglob('*'):
             if file_path.is_file():
                 ext = file_path.suffix
-                if ext in language_extensions:
-                    lang = language_extensions[ext]
+                if ext in LANGUAGE_EXTENSIONS:
+                    lang = LANGUAGE_EXTENSIONS[ext]
                     self.languages[lang] = self.languages.get(lang, 0) + 1
     
     def _detect_frameworks(self):
         """Detect frameworks and tools in use."""
-        framework_indicators = {
-            'package.json': ['Node.js', 'npm'],
-            'requirements.txt': ['Python', 'pip'],
-            'Pipfile': ['Python', 'pipenv'],
-            'pyproject.toml': ['Python', 'Poetry'],
-            'Cargo.toml': ['Rust', 'Cargo'],
-            'go.mod': ['Go', 'Go Modules'],
-            'pom.xml': ['Java', 'Maven'],
-            'build.gradle': ['Java/Kotlin', 'Gradle'],
-            'Gemfile': ['Ruby', 'Bundler'],
-            'composer.json': ['PHP', 'Composer'],
-            'Makefile': ['Make'],
-            'CMakeLists.txt': ['CMake'],
-            'Dockerfile': ['Docker'],
-            'docker-compose.yml': ['Docker Compose'],
-            '.github/workflows': ['GitHub Actions'],
-        }
-        
-        for indicator, frameworks in framework_indicators.items():
+        for indicator, frameworks in FRAMEWORK_INDICATORS.items():
             path = self.root_path / indicator
             if path.exists():
                 self.frameworks.extend(frameworks)
@@ -144,8 +152,7 @@ class CodebaseAnalyzer:
             })
         
         # Check for missing tests
-        test_dirs = ['tests', 'test', '__tests__', 'spec']
-        has_tests = any((self.root_path / d).exists() for d in test_dirs)
+        has_tests = any((self.root_path / d).exists() for d in TEST_DIRS)
         if not has_tests and self.file_count > 5:
             vectors.append({
                 "type": "testing",
@@ -154,8 +161,7 @@ class CodebaseAnalyzer:
             })
         
         # Check for missing CI/CD
-        ci_files = ['.github/workflows', '.gitlab-ci.yml', '.travis.yml', 'Jenkinsfile']
-        has_ci = any((self.root_path / f).exists() for f in ci_files)
+        has_ci = any((self.root_path / f).exists() for f in CI_FILES)
         if not has_ci and self.file_count > 10:
             vectors.append({
                 "type": "ci_cd",
@@ -258,12 +264,12 @@ class VibeCoder:
     
     def determine_environment_state(self) -> EnvironmentState:
         """Determine if environment is empty or populated."""
-        # Ignore .git and README.md for emptiness check
+        # Ignore certain files for emptiness check
         files = [f for f in self.work_dir.iterdir() 
-                if f.name not in ['.git', '.gitignore'] and not f.name.startswith('.')]
+                if f.name.lower() not in EMPTINESS_IGNORED_FILES and not f.name.startswith('.')]
         
         # If only README.md or similar docs exist, consider it empty
-        if len(files) <= 1 and any(f.name.lower() in ['readme.md', 'readme.txt', 'readme'] for f in files):
+        if len(files) <= 1 and any(f.name.lower() in EMPTINESS_IGNORED_FILES for f in files):
             return EnvironmentState.EMPTY
         elif len(files) == 0:
             return EnvironmentState.EMPTY
