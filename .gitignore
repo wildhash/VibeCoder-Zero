@@ -53,3 +53,4 @@ htmlcov/
 
 # State persistence (runtime generated)
 vibe_log.md
+.vibe/
