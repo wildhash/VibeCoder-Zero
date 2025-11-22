@@ -21,8 +21,8 @@ test:
 	@if command -v pytest >/dev/null 2>&1; then \
 		pytest tests/ -v; \
 	else \
-		echo "pytest not installed. Install with: pip install pytest"; \
-		exit 1; \
+		echo "pytest not installed. Running tests with Python directly..."; \
+		python3 tests/test_vibecoder.py && python3 tests/test_new_modules.py; \
 	fi
 
 format:
