@@ -11,14 +11,11 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from vibecoder_zero import (
-    VibeCoder,
-    CodebaseAnalyzer,
-    SelfImprovementPlanner,
-    EnvironmentState,
-    DirectiveOutput,
-    VibeLog
-)
+from vibecoder.runtime.cli import VibeCoder
+from vibecoder.core.analyzer import CodebaseAnalyzer, EnvironmentState
+from vibecoder.core.planner import SelfImprovementPlanner
+from vibecoder.core.output import DirectiveOutput
+from vibecoder.runtime.state import VibeLog
 
 
 def test_vibecoder_initialization():
