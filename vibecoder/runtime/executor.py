@@ -8,7 +8,18 @@ SAFE_PREFIXES = ["ls", "pwd", "mkdir", "touch", "git init", "git status", "pytho
 
 
 def is_safe_command(cmd: str) -> bool:
+    """Check if a command is safe to auto-execute.
+    
+    Prevents command chaining by checking for shell operators.
+    """
     stripped = cmd.strip()
+    
+    # Check for command chaining operators
+    dangerous_chars = [';', '&', '|', '>', '<', '`', '$', '(', ')']
+    if any(char in stripped for char in dangerous_chars):
+        return False
+    
+    # Check if command starts with a safe prefix
     return any(stripped.startswith(prefix) for prefix in SAFE_PREFIXES)
 
 

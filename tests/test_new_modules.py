@@ -22,6 +22,16 @@ def test_safe_command_detection():
     assert is_safe_command("pwd")
     assert is_safe_command("mkdir test")
     assert is_safe_command("git status")
+    
+    # Should reject command chaining
+    assert not is_safe_command("ls; rm -rf /")
+    assert not is_safe_command("ls && rm -rf /")
+    assert not is_safe_command("ls | grep test")
+    assert not is_safe_command("ls > output.txt")
+    assert not is_safe_command("cat $(whoami)")
+    assert not is_safe_command("ls `whoami`")
+    
+    # Should reject unsafe commands
     assert not is_safe_command("rm -rf /")
     assert not is_safe_command("sudo apt install")
     assert not is_safe_command("npm install")

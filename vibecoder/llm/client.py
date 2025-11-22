@@ -31,18 +31,14 @@ class LLMClient:
         return self.plan_model
 
     def _call_openai(self, model: str, system: str, user: str) -> str:
-        from openai import OpenAI
-        client = OpenAI()
-        resp = client.chat.completions.create(
+        resp = self._client.chat.completions.create(
             model=model,
             messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
         )
         return resp.choices[0].message.content or ""
 
     def _call_anthropic(self, model: str, system: str, user: str) -> str:
-        import anthropic
-        client = anthropic.Anthropic()
-        resp = client.messages.create(
+        resp = self._client.messages.create(
             model=model,
             max_tokens=2048,
             system=system,
