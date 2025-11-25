@@ -9,6 +9,20 @@ class VibeLog:
     """Manages state persistence via vibe_log.md file."""
     
     def __init__(self, root_path: Path):
+        """
+        Initialize the VibeLog with a root directory and set up internal paths and state placeholders.
+        
+        Parameters:
+            root_path (Path): Base directory where `vibe_log.md` will be created and managed.
+        
+        Attributes:
+            root_path (Path): The provided base directory.
+            log_path (Path): Path to the `vibe_log.md` file (root_path / "vibe_log.md").
+            current_goal (Optional[str]): Parsed current goal from the log, or None.
+            completed_steps (List[str]): Collected completed steps (initially empty).
+            active_blockers (List[str]): Collected active blockers (initially empty).
+            last_state (Optional[dict]): Last parsed state snapshot of the log, or None.
+        """
         self.root_path = root_path
         self.log_path = root_path / "vibe_log.md"
         self.current_goal = None
@@ -17,11 +31,27 @@ class VibeLog:
         self.last_state = None
     
     def exists(self) -> bool:
-        """Check if vibe_log.md exists."""
+        """
+        Determine whether the vibe_log.md file exists at the instance's log path.
+        
+        Returns:
+            True if the file exists at `log_path`, False otherwise.
+        """
         return self.log_path.exists()
     
     def read(self) -> Dict:
-        """Read and parse existing vibe_log.md."""
+        """
+        Read and parse the vibe_log.md file under the configured root path.
+        
+        If the file exists, sets `self.current_goal` to the first non-empty, non-heading line following the "Current Goal" marker (when present) and stores a snapshot in `self.last_state`.
+        
+        Returns:
+            state (Dict): A mapping with:
+                - content (str): Full file content.
+                - has_goal (bool): `True` if "Current Goal" appears in the content, `False` otherwise.
+                - has_steps (bool): `True` if "Completed Steps" appears in the content, `False` otherwise.
+                - has_blockers (bool): `True` if "Active Blockers" appears in the content, `False` otherwise.
+        """
         if not self.exists():
             return {}
         
@@ -50,7 +80,26 @@ class VibeLog:
         return state
     
     def initialize(self, environment_state: EnvironmentState, analysis_data: Dict = None):
-        """Initialize a new vibe_log.md file."""
+        """
+        Initialize or overwrite the vibe_log.md file at the VibeLog's log path with a structured project log.
+        
+        Builds a Markdown template and writes it to the log file, setting the instance's current_goal accordingly.
+        
+        Parameters:
+            environment_state (EnvironmentState): Determines the goal and master plan template; commonly
+                EnvironmentState.EMPTY (creates a foundational setup plan) or EnvironmentState.POPULATED
+                (creates an analysis-oriented plan).
+            analysis_data (Dict, optional): Additional environment analysis used to populate the
+                "Environment Analysis" section. Expected keys include:
+                - 'file_count' (int): total files count
+                - 'dir_count' (int): total directories count
+                - 'languages' (Mapping[str, int]): mapping of language name to file count
+                - 'frameworks' (Iterable[str]): detected frameworks or tools
+        
+        Side effects:
+            - Writes or overwrites the vibe_log.md file at self.log_path with the generated content.
+            - Updates self.current_goal to the goal inserted into the file.
+        """
         from datetime import datetime
         
         content = [
@@ -138,7 +187,16 @@ class VibeLog:
         self.current_goal = current_goal
     
     def update(self, new_goal: str = None, completed_step: str = None, blocker: str = None):
-        """Update vibe_log.md with new information."""
+        """
+        Update the file's 'Last Updated' timestamp in vibe_log.md.
+        
+        If the log file does not exist, no action is taken. Replaces an existing "*Last Updated:" line with the current timestamp; if no such line exists, appends a separator and a new "*Last Updated: YYYY-MM-DD HH:MM:SS*" line.
+        
+        Parameters:
+            new_goal (str): Accepted but not used.
+            completed_step (str): Accepted but not used.
+            blocker (str): Accepted but not used.
+        """
         from datetime import datetime
         
         if not self.exists():

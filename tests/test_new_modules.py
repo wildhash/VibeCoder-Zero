@@ -17,7 +17,11 @@ from vibecoder.self_reflector.reflector import read_files
 
 
 def test_safe_command_detection():
-    """Test safe command detection."""
+    """
+    Verify that is_safe_command correctly identifies safe shell commands and rejects unsafe patterns.
+    
+    Checks that common benign commands (e.g., `ls -la`, `pwd`, `mkdir`, `git status`) are allowed, and that command chaining, piping, redirection, command substitution/backticks, and clearly dangerous commands (e.g., `rm -rf /`, `sudo apt install`, `npm install`) are rejected.
+    """
     assert is_safe_command("ls -la")
     assert is_safe_command("pwd")
     assert is_safe_command("mkdir test")
@@ -99,7 +103,11 @@ def test_context_manager_save_load():
 
 
 def test_read_files():
-    """Test read_files function."""
+    """
+    Verify that read_files returns a combined string containing the specified filenames and their contents.
+    
+    Creates two files in a temporary directory, calls read_files with those filenames, and asserts the returned text includes both filenames and their respective contents.
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
         
@@ -147,7 +155,11 @@ def test_llm_client_initialization_openai():
 
 
 def test_llm_client_initialization_anthropic():
-    """Test LLMClient initialization with Anthropic provider."""
+    """
+    Verify LLMClient can be constructed for the Anthropic provider and that provider and model attributes reflect the provided values.
+    
+    Only validates construction and attribute assignments; initialization failures (for example due to missing API keys) are accepted and do not cause the test to fail.
+    """
     # Only test initialization, not actual API calls
     try:
         client = LLMClient(
@@ -164,7 +176,11 @@ def test_llm_client_initialization_anthropic():
 
 
 def test_llm_client_invalid_provider():
-    """Test LLMClient raises error for invalid provider."""
+    """
+    Verify LLMClient construction rejects unknown provider values.
+    
+    Asserts that creating an LLMClient with provider="invalid" raises a ValueError containing the text "Unknown provider".
+    """
     try:
         LLMClient(
             provider="invalid",

@@ -9,10 +9,21 @@ class SelfImprovementPlanner:
     """Creates plans for self-improving development environments."""
     
     def __init__(self, root_path: Path):
+        """
+        Initialize the planner with the project root path.
+        
+        Parameters:
+            root_path (Path): Filesystem path that serves as the root for generated directives and project structure.
+        """
         self.root_path = root_path
     
     def create_plan(self) -> List[DirectiveOutput]:
-        """Generate a comprehensive development environment plan."""
+        """
+        Create a staged plan of directives for setting up a Python development environment.
+        
+        Returns:
+            List[DirectiveOutput]: A list of DirectiveOutput objects representing ordered setup steps (e.g., file operations, commands, configuration snippets). Each directive includes metadata such as `directive_type`, `content`, `description`, `priority`, and optional `requires_api_keys`; priority values indicate relative execution or importance.
+        """
         directives = []
         
         # Core structure directives
