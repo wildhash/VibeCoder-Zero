@@ -6,7 +6,11 @@ from enum import Enum
 
 
 # Constants for directory scanning and analysis
-IGNORE_DIRS = {'.git', '__pycache__', 'node_modules', '.venv', 'venv', 'dist', 'build'}
+IGNORE_DIRS = {
+    '.git', '__pycache__', 'node_modules', '.venv', 'venv', 'dist', 'build',
+    '.mypy_cache', '.pytest_cache', '.coverage', 'htmlcov', '.tox', '.eggs',
+    '.cache', '.ruff_cache', 'coverage', '.hypothesis'
+}
 
 LANGUAGE_EXTENSIONS = {
     '.py': 'Python',
@@ -90,8 +94,16 @@ class CodebaseAnalyzer:
     
     def _scan_directory(self):
         """Scan directory structure."""
+        resolved_root = self.root_path.resolve()
         for item in self.root_path.rglob('*'):
             if any(ignored in item.parts for ignored in IGNORE_DIRS):
+                continue
+            
+            # Prevent directory traversal via symlinks
+            try:
+                if not item.resolve().is_relative_to(resolved_root):
+                    continue
+            except (ValueError, OSError):
                 continue
             
             if item.is_file():
@@ -101,7 +113,15 @@ class CodebaseAnalyzer:
     
     def _detect_languages(self):
         """Detect programming languages in use."""
+        resolved_root = self.root_path.resolve()
         for file_path in self.root_path.rglob('*'):
+            # Prevent directory traversal via symlinks
+            try:
+                if not file_path.resolve().is_relative_to(resolved_root):
+                    continue
+            except (ValueError, OSError):
+                continue
+            
             if file_path.is_file():
                 ext = file_path.suffix
                 if ext in LANGUAGE_EXTENSIONS:
@@ -112,7 +132,8 @@ class CodebaseAnalyzer:
         """Detect frameworks and tools in use."""
         for indicator, frameworks in FRAMEWORK_INDICATORS.items():
             path = self.root_path / indicator
-            if path.exists():
+            # Check file exists and has content (not empty)
+            if path.exists() and (path.is_dir() or path.stat().st_size > 0):
                 self.frameworks.extend(frameworks)
     
     def _identify_optimization_vectors(self):
