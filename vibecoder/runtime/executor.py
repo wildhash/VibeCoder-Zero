@@ -25,7 +25,7 @@ def is_safe_command(cmd: str) -> bool:
 def execute_command(cmd: str, auto: bool = False) -> subprocess.CompletedProcess:
     if auto and is_safe_command(cmd):
         print(f"[AUTO-EXEC] {cmd}")
-        return subprocess.run(cmd, shell=True, text=True, capture_output=True)
+        return subprocess.run(shlex.split(cmd), text=True, capture_output=True)
     else:
         print(f"[MANUAL EXECUTION REQUIRED]\n{cmd}\n")
         return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")

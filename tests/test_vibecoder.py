@@ -15,7 +15,6 @@ from vibecoder.runtime.cli import VibeCoder
 from vibecoder.core.analyzer import CodebaseAnalyzer, EnvironmentState
 from vibecoder.core.planner import SelfImprovementPlanner
 from vibecoder.core.output import DirectiveOutput
-from vibecoder.runtime.state import VibeLog
 
 
 def test_vibecoder_initialization():

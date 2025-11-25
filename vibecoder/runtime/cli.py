@@ -16,7 +16,6 @@ from vibecoder.core.analyzer import (
 from vibecoder.core.planner import SelfImprovementPlanner
 from vibecoder.runtime.state import VibeLog
 from vibecoder.runtime.executor import execute_command
-from vibecoder.vibe.context_manager import load_context, save_context
 from vibecoder.llm.client import LLMClient
 
 
