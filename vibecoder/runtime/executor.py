@@ -2,7 +2,6 @@
 
 import shlex
 import subprocess
-from typing import List
 
 SAFE_PREFIXES = ["ls", "pwd", "mkdir", "touch", "git init", "git status", "python -m venv"]
 
