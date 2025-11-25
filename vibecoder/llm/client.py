@@ -95,7 +95,7 @@ class LLMClient:
             system=system,
             messages=[{"role": "user", "content": user}],
         )
-        return "".join(block.text for block in resp.content if getattr(block, "text", None))
+        return "".join(getattr(block, "text", "") for block in resp.content)
 
     def _call(self, mode: Mode, system: str, user: str) -> str:
         """

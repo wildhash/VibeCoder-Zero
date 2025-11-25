@@ -23,7 +23,10 @@ def read_files(base_dir: Path, filenames: List[str]) -> str:
     for name in filenames:
         p = base_dir / name
         if p.exists():
-            chunks.append(f"=== {name} ===\n{p.read_text(encoding='utf-8')}\n")
+            try:
+                chunks.append(f"=== {name} ===\n{p.read_text(encoding='utf-8')}\n")
+            except (OSError, UnicodeDecodeError) as e:
+                chunks.append(f"=== {name} ===\nError reading file: {e}\n")
     return "\n".join(chunks)
 
 
@@ -45,4 +48,9 @@ def run_self_reflection(base_dir: Path, llm: LLMClient) -> Path:
     pr_body = llm.plan_next_steps(prompt)
     out_path = base_dir / "SELF_REFLECTION_PR.md"
     out_path.write_text(pr_body, encoding="utf-8")
+    return out_path
+    try:
+        out_path.write_text(pr_body, encoding="utf-8")
+    except OSError as e:
+        raise OSError(f"Failed to write self-reflection to {out_path}: {e}") from e
     return out_path

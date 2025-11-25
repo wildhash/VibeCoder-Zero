@@ -21,8 +21,11 @@ def load_context() -> Dict[str, Any]:
     """
     if not CONTEXT_FILE.exists():
         return DEFAULT_CONTEXT.copy()
-    with open(CONTEXT_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(CONTEXT_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, OSError):
+        return DEFAULT_CONTEXT.copy()
 
 
 def save_context(ctx: Dict[str, Any]) -> None:

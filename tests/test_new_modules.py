@@ -53,7 +53,7 @@ def test_execute_command_auto_safe():
     """Test execute_command auto-executes safe commands."""
     with tempfile.TemporaryDirectory() as tmpdir:
         # This should auto-execute
-        result = execute_command(f"mkdir -p {tmpdir}/test_dir", auto=True)
+        execute_command(f"mkdir -p {tmpdir}/test_dir", auto=True)
         # Check the directory was created
         assert Path(tmpdir, "test_dir").exists()
 
@@ -68,30 +68,38 @@ def test_execute_command_auto_unsafe():
 
 def test_context_manager_default():
     """Test context manager returns default context when no file exists."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
-        context = load_context()
-        assert context == DEFAULT_CONTEXT
+    original_dir = os.getcwd()
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+            context = load_context()
+            assert context == DEFAULT_CONTEXT
+    finally:
+        os.chdir(original_dir)
 
 
 def test_context_manager_save_load():
     """Test context manager can save and load context."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        os.chdir(tmpdir)
-        
-        # Save context
-        test_context = {
-            "project_name": "TestProject",
-            "intent": "Testing",
-            "stack": ["Python"],
-            "preferences": {"style": "clean"},
-            "history": ["init"]
-        }
-        save_context(test_context)
-        
-        # Load context
-        loaded_context = load_context()
-        assert loaded_context == test_context
+    original_dir = os.getcwd()
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+            
+            # Save context
+            test_context = {
+                "project_name": "TestProject",
+                "intent": "Testing",
+                "stack": ["Python"],
+                "preferences": {"style": "clean"},
+                "history": ["init"]
+            }
+            save_context(test_context)
+            
+            # Load context
+            loaded_context = load_context()
+            assert loaded_context == test_context
+    finally:
+        os.chdir(original_dir)
 
 
 def test_read_files():
@@ -174,7 +182,7 @@ def test_llm_client_invalid_provider():
     Asserts that creating an LLMClient with provider="invalid" raises a ValueError containing the text "Unknown provider".
     """
     try:
-        client = LLMClient(
+        LLMClient(
             provider="invalid",
             plan_model="model",
             code_model="model"
