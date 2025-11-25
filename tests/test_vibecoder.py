@@ -11,14 +11,10 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from vibecoder_zero import (
-    VibeCoder,
-    CodebaseAnalyzer,
-    SelfImprovementPlanner,
-    EnvironmentState,
-    DirectiveOutput,
-    VibeLog
-)
+from vibecoder.runtime.cli import VibeCoder
+from vibecoder.core.analyzer import CodebaseAnalyzer, EnvironmentState
+from vibecoder.core.planner import SelfImprovementPlanner
+from vibecoder.core.output import DirectiveOutput
 
 
 def test_vibecoder_initialization():
@@ -57,7 +53,7 @@ def test_codebase_analyzer():
         # Create a simple Python project structure
         (tmppath / "main.py").write_text("print('hello')")
         (tmppath / "utils.py").write_text("def util(): pass")
-        (tmppath / "requirements.txt").touch()
+        (tmppath / "requirements.txt").write_text("pytest>=7.0.0")
         
         analyzer = CodebaseAnalyzer(tmppath)
         results = analyzer.analyze()
@@ -148,10 +144,10 @@ def test_framework_detection():
     with tempfile.TemporaryDirectory() as tmpdir:
         tmppath = Path(tmpdir)
         
-        # Create framework indicator files
-        (tmppath / "package.json").touch()
-        (tmppath / "requirements.txt").touch()
-        (tmppath / "Dockerfile").touch()
+        # Create framework indicator files with content (non-empty)
+        (tmppath / "package.json").write_text("{}")
+        (tmppath / "requirements.txt").write_text("pytest>=7.0.0")
+        (tmppath / "Dockerfile").write_text("FROM python:3.9")
         
         analyzer = CodebaseAnalyzer(tmppath)
         analyzer._detect_frameworks()
