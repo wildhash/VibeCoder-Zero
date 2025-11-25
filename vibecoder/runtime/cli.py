@@ -24,6 +24,16 @@ class VibeCoder:
     """Main autonomous coding entity."""
     
     def __init__(self, work_dir: Optional[str] = None, llm_client: Optional[LLMClient] = None, auto_execute: bool = False):
+        """
+        Initialize a VibeCoder instance configured for a target working directory and optional LLM client.
+        
+        Creates internal state placeholders, a VibeLog in the working directory, and a list of required API keys. If a prior vibe_log.md exists in the working directory, it is read to populate prior state.
+        
+        Parameters:
+            work_dir (Optional[str]): Path to the workspace to analyze; defaults to the current working directory when omitted.
+            llm_client (Optional[LLMClient]): Optional language-model client used for analysis and planning; may be None for offline operation.
+            auto_execute (bool): When True, enables automatic execution of safe command directives produced during runs.
+        """
         self.work_dir = Path(work_dir) if work_dir else Path.cwd()
         self.state = None
         self.analysis_results = None
@@ -37,7 +47,14 @@ class VibeCoder:
             self.vibe_log.read()
     
     def determine_environment_state(self) -> EnvironmentState:
-        """Determine if environment is empty or populated."""
+        """
+        Classifies the working directory as EMPTY or POPULATED based on present files.
+        
+        Considers hidden files and a predefined set of ignorable documentation filenames (EMPTINESS_IGNORED_FILES) when determining emptiness; a directory with no non-ignored, non-hidden entries — or only ignorable docs — is treated as EMPTY.
+        
+        Returns:
+            EnvironmentState.EMPTY if the directory contains no non-ignored, non-hidden entries or only ignorable documentation files, `EnvironmentState.POPULATED` otherwise.
+        """
         # Ignore certain files for emptiness check
         files = [f for f in self.work_dir.iterdir() 
                 if f.name.lower() not in EMPTINESS_IGNORED_FILES and not f.name.startswith('.')]
@@ -51,7 +68,12 @@ class VibeCoder:
             return EnvironmentState.POPULATED
     
     def demand_api_keys(self) -> DirectiveOutput:
-        """Generate directive to demand API keys."""
+        """
+        Produce a directive that instructs setting any missing required API keys as environment variables.
+        
+        Returns:
+            DirectiveOutput: A directive containing shell export commands and metadata (priority 0 and `requires_api_keys` set to the missing keys), or `None` if all required keys are present.
+        """
         missing_keys = [key for key in self.required_api_keys if not os.getenv(key)]
         
         if missing_keys:
@@ -66,7 +88,13 @@ class VibeCoder:
         return None
     
     def analyze_environment(self):
-        """Analyze current environment and determine actions."""
+        """
+        Determine the current environment state and populate analysis results accordingly.
+        
+        Sets self.state to the detected EnvironmentState and updates self.analysis_results:
+        - If the working directory contains a codebase, performs analysis and stores the analyzer's results.
+        - If the working directory is effectively empty, sets analysis_results to a payload indicating an empty environment and readiness for initialization.
+        """
         self.state = self.determine_environment_state()
         
         if self.state == EnvironmentState.POPULATED:
@@ -79,7 +107,14 @@ class VibeCoder:
             }
     
     def generate_directives(self) -> List[DirectiveOutput]:
-        """Generate directives based on environment analysis."""
+        """
+        Create a list of directives appropriate to the current environment state.
+        
+        If any required API keys are missing, a directive to provide them is included. For an EMPTY environment, returns the self-improvement plan directives. For a POPULATED environment, returns optimization directives derived from analysis results. The final list is sorted by each directive's numeric priority (lower values indicate higher priority).
+        
+        Returns:
+            List[DirectiveOutput]: Directives to be executed, sorted by `priority` (high-priority directives have lower numeric values; vectors marked 'high' are assigned priority 1, others 2).
+        """
         directives = []
         
         # Always check for API keys first
@@ -106,7 +141,23 @@ class VibeCoder:
         return sorted(directives, key=lambda x: x.priority)
     
     def format_output(self, directives: List[DirectiveOutput]) -> str:
-        """Format directives for terminal output."""
+        """
+        Build a human-readable report that summarizes environment analysis and lists directives for display.
+        
+        Produces a formatted multi-line string containing:
+        - a header with the VibeCoder title and working directory,
+        - environment analysis (state, file/dir counts, detected languages and frameworks when available),
+        - a numbered list of directives with priority, type, description, required API keys, and the directive content under an "Execute" section.
+        
+        Parameters:
+            directives (List[DirectiveOutput]): Ordered list of directives to include in the output.
+        
+        Returns:
+            report (str): The complete formatted report as a single string.
+        
+        Notes:
+            If `self.auto_execute` is True, directives with `directive_type == "command"` will be executed via `execute_command(...)` and any captured stdout/stderr will be appended to the corresponding directive section of the returned string.
+        """
         output = []
         output.append("=" * 80)
         output.append("VIBECODER-ZERO: AUTONOMOUS SOFTWARE GENERATION ENTITY")
@@ -166,7 +217,14 @@ class VibeCoder:
         return "\n".join(output)
     
     def execute(self):
-        """Main execution method."""
+        """
+        Run the end-to-end workflow: analyze the environment, initialize or update the vibe log, generate directives, format and print the output.
+        
+        Performs environment analysis, ensures the persistent vibe_log.md reflects the current state, produces prioritized directives, renders a human-readable report (printed to stdout), and returns the directives for programmatic use.
+        
+        Returns:
+            List[DirectiveOutput]: The list of generated directives in priority order.
+        """
         self.analyze_environment()
         
         # Initialize or update vibe_log.md
@@ -188,7 +246,15 @@ class VibeCoder:
 
 
 def main():
-    """Entry point for VibeCoder-Zero."""
+    """
+    Command-line entry point that runs VibeCoder workflows based on CLI flags.
+    
+    Parses command-line options (--work-dir, --json, --auto-execute, --self-reflect), initializes an optional LLM client when OPENAI_API_KEY or ANTHROPIC_API_KEY is present, and either:
+    - runs the self-reflection workflow (when --self-reflect) and prints the produced output path, or
+    - instantiates VibeCoder, executes analysis and directive generation, and prints the formatted or JSON output.
+    
+    Exits with status code 1 if --self-reflect is requested but no supported API key is available.
+    """
     import argparse
     
     parser = argparse.ArgumentParser(

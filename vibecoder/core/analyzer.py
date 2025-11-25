@@ -69,6 +69,17 @@ class CodebaseAnalyzer:
     """Analyzes existing codebases to identify optimization vectors."""
     
     def __init__(self, root_path: Path):
+        """
+        Initialize the analyzer for a codebase rooted at the given path.
+        
+        Parameters:
+            root_path (Path): Filesystem path of the project root to analyze. Initializes analysis counters and collections:
+                - file_count: total files encountered (starts at 0)
+                - dir_count: total directories encountered (starts at 0)
+                - languages: mapping of detected language names to counts (starts empty)
+                - frameworks: list of detected frameworks/tools (starts empty)
+                - optimization_vectors: list of identified improvement opportunities (starts empty)
+        """
         self.root_path = root_path
         self.file_count = 0
         self.dir_count = 0
@@ -77,7 +88,18 @@ class CodebaseAnalyzer:
         self.optimization_vectors = []
     
     def analyze(self) -> Dict:
-        """Perform comprehensive codebase analysis."""
+        """
+        Analyze the repository rooted at the analyzer's root_path and produce a summary of its contents and improvement opportunities.
+        
+        Returns:
+            result (Dict): Summary dictionary with the following keys:
+                - state (str): EnvironmentState value describing detected environment (e.g., "populated").
+                - file_count (int): Total number of files encountered.
+                - dir_count (int): Total number of directories encountered.
+                - languages (Dict[str, int]): Mapping from detected language name to occurrence count.
+                - frameworks (List[str]): List of detected frameworks or tooling indicators.
+                - optimization_vectors (List[Dict]): List of identified optimization opportunities, each described with keys like `type`, `priority`, and `description`.
+        """
         self._scan_directory()
         self._detect_languages()
         self._detect_frameworks()
@@ -93,7 +115,11 @@ class CodebaseAnalyzer:
         }
     
     def _scan_directory(self):
-        """Scan directory structure."""
+        """
+        Scan the analyzer's root path and count contained files and directories.
+        
+        Counts files and directories found under `self.root_path` while skipping paths that contain any names from `IGNORE_DIRS` and avoiding traversal into symlinked locations outside the resolved root. Updates `self.file_count` and `self.dir_count` in place.
+        """
         resolved_root = self.root_path.resolve()
         for item in self.root_path.rglob('*'):
             if any(ignored in item.parts for ignored in IGNORE_DIRS):
@@ -112,7 +138,11 @@ class CodebaseAnalyzer:
                 self.dir_count += 1
     
     def _detect_languages(self):
-        """Detect programming languages in use."""
+        """
+        Identify and count programming languages present under the analyzer's root path.
+        
+        Updates self.languages with counts keyed by language name using file extensions defined in LANGUAGE_EXTENSIONS. Files reachable only via symlinks that resolve outside the analyzer's resolved root are ignored.
+        """
         resolved_root = self.root_path.resolve()
         for file_path in self.root_path.rglob('*'):
             # Prevent directory traversal via symlinks
@@ -129,7 +159,11 @@ class CodebaseAnalyzer:
                     self.languages[lang] = self.languages.get(lang, 0) + 1
     
     def _detect_frameworks(self):
-        """Detect frameworks and tools in use."""
+        """
+        Scan the analyzer's root_path for known framework/tool indicator files or directories and record any matched frameworks.
+        
+        For each entry in FRAMEWORK_INDICATORS, if the corresponding path exists under root_path and is either a directory or a file with content, the associated frameworks are appended to self.frameworks.
+        """
         for indicator, frameworks in FRAMEWORK_INDICATORS.items():
             path = self.root_path / indicator
             # Check file exists and has content (not empty)
@@ -137,7 +171,15 @@ class CodebaseAnalyzer:
                 self.frameworks.extend(frameworks)
     
     def _identify_optimization_vectors(self):
-        """Identify potential optimization opportunities."""
+        """
+        Populate self.optimization_vectors with detected improvement opportunities based on repository contents.
+        
+        Detects and adds vectors for missing project documentation, testing, CI/CD configuration, and Python dependency management. Each vector is a dict with keys "type", "priority", and "description". Detection rules:
+        - Adds a documentation vector if README.md is absent.
+        - Adds a testing vector if no test directories exist and file_count > 5.
+        - Adds a CI/CD vector if no CI files exist and file_count > 10.
+        - Adds a dependency_management vector if Python is detected and no common Python dependency files (requirements.txt, Pipfile, pyproject.toml) are present.
+        """
         vectors = []
         
         # Check for missing documentation
