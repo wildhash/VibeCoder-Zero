@@ -6,7 +6,7 @@ creating complete, tested, and executable project structures.
 
 from pathlib import Path
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import json
 
 
@@ -18,11 +18,7 @@ class ProjectSpec:
     language: str  # 'python', 'javascript', 'typescript', etc.
     project_type: str  # 'cli', 'web', 'api', 'library'
     features: List[str]  # ['testing', 'ci', 'docker', 'docs']
-    dependencies: List[str] = None
-    
-    def __post_init__(self):
-        if self.dependencies is None:
-            self.dependencies = []
+    dependencies: List[str] = field(default_factory=list)
 
 
 @dataclass 

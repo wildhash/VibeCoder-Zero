@@ -9,7 +9,7 @@ import sys
 import json
 from pathlib import Path
 from typing import Dict, List, Optional, Any
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from enum import Enum
 from datetime import datetime
 
@@ -26,6 +26,11 @@ class PipelineStage(Enum):
     FAILED = "failed"
 
 
+def _default_timestamp() -> str:
+    """Generate default timestamp for pipeline state."""
+    return datetime.now().isoformat()
+
+
 @dataclass
 class PipelineState:
     """State of the generation pipeline."""
@@ -33,19 +38,11 @@ class PipelineState:
     project_name: str
     project_dir: Optional[str] = None
     iterations: int = 0
-    errors: List[str] = None
-    generated_files: List[str] = None
-    test_results: Dict = None
-    started_at: str = None
+    errors: List[str] = field(default_factory=list)
+    generated_files: List[str] = field(default_factory=list)
+    test_results: Dict = field(default_factory=dict)
+    started_at: str = field(default_factory=_default_timestamp)
     completed_at: str = None
-    
-    def __post_init__(self):
-        if self.errors is None:
-            self.errors = []
-        if self.generated_files is None:
-            self.generated_files = []
-        if self.started_at is None:
-            self.started_at = datetime.now().isoformat()
 
 
 @dataclass
