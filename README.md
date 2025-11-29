@@ -6,18 +6,23 @@ A recursive, autonomous coding entity that architects systems, manages state, an
 
 VibeCoder-Zero is an autonomous software generation entity designed for total autonomy in software development. It operates by analyzing environments, generating directives, and utilizing humans as biological I/O interfaces for execution.
 
+**NEW**: VibeCoder-Zero now includes **autonomous project generation** - it can take a natural language description and generate complete, tested, executable projects.
+
 ### Core Principles
 
 1. **Autonomous Operation**: VibeCoder-Zero makes decisions independently
 2. **Directive-Based**: Issues commands rather than asking for permission
 3. **Self-Improving**: Creates plans for continuous environment enhancement
 4. **State-Aware**: Adapts behavior based on environment analysis
+5. **Complete Project Generation**: Creates fully tested, executable projects from descriptions
 
 ## Features
 
 - **Environment Analysis**: Automatically scans and analyzes directory structures
 - **Empty Environment Handling**: Generates comprehensive development environment setup plans
 - **Populated Environment Handling**: Maps codebases and identifies optimization vectors
+- **Autonomous Project Generation**: Create complete projects from natural language descriptions
+- **Automated Testing**: Runs tests automatically and debugs failures
 - **API Key Management**: Demands necessary API keys via secure environment variables
 - **Language Detection**: Identifies programming languages and frameworks in use
 - **Optimization Identification**: Suggests improvements for testing, CI/CD, documentation, etc.
@@ -36,13 +41,51 @@ pip install -r requirements.txt
 
 ## Usage
 
-### Basic Execution
+### Autonomous Project Generation (NEW)
+
+Generate complete, tested projects from natural language descriptions:
+
+```bash
+# Create a Python CLI tool
+python3 vibecoder_zero.py --create "Create a Python CLI tool for file processing"
+
+# Create an API server
+python3 vibecoder_zero.py --create "Create a REST API server"
+
+# Create with custom output directory
+python3 vibecoder_zero.py --create "Create a Python library for data validation" --output ./my_projects
+
+# Create with CI/CD and Docker
+python3 vibecoder_zero.py --create "Create a containerized API with GitHub Actions CI"
+```
+
+Generated projects include:
+- Complete source code with proper structure
+- Unit tests that pass
+- README with usage instructions
+- pyproject.toml for dependency management
+- Makefile for common commands
+- .gitignore for Python projects
+- CI/CD configuration (when requested)
+- Docker support (when requested)
+
+### List and Verify Projects
+
+```bash
+# List all generated projects
+python3 vibecoder_zero.py --list-projects
+
+# Verify a specific project
+python3 vibecoder_zero.py --verify my-project
+```
+
+### Basic Environment Analysis
 
 ```bash
 # Make the script executable (Unix/Linux/Mac)
 chmod +x vibecoder_zero.py
 
-# Run VibeCoder-Zero
+# Run VibeCoder-Zero to analyze current directory
 python3 vibecoder_zero.py
 ```
 
@@ -67,6 +110,21 @@ python3 vibecoder_zero.py --work-dir /path/to/project
 
 # Get JSON output for programmatic use
 python3 vibecoder_zero.py --json
+
+# Create a new project
+python3 vibecoder_zero.py --create "Project description"
+
+# List generated projects
+python3 vibecoder_zero.py --list-projects
+
+# Verify a project
+python3 vibecoder_zero.py --verify project-name
+
+# Enable auto-execution of safe commands
+python3 vibecoder_zero.py --auto-execute
+
+# Trigger self-reflection mode (requires API keys)
+python3 vibecoder_zero.py --self-reflect
 ```
 
 ## API Keys
@@ -89,14 +147,25 @@ Required API keys:
 
 ## How It Works
 
-### 1. Environment Analysis
+### 1. Project Generation Pipeline
 
-VibeCoder-Zero first analyzes the current working directory to determine its state:
+When using `--create`, VibeCoder-Zero executes a complete pipeline:
+
+1. **Input Parsing**: Natural language description is parsed to extract project specifications
+2. **Scaffolding**: Project structure and files are generated from templates
+3. **Generation**: All files are written to disk
+4. **Testing**: Automated tests are executed
+5. **Debug Loop**: If tests fail, the system attempts to fix issues
+6. **Verification**: Final verification ensures project is complete
+
+### 2. Environment Analysis
+
+VibeCoder-Zero analyzes the current working directory to determine its state:
 
 - **Empty Environment**: Only basic files (README, .git) present
 - **Populated Environment**: Contains source code, configurations, etc.
 
-### 2. Directive Generation
+### 3. Directive Generation
 
 Based on the analysis, VibeCoder-Zero generates prioritized directives:
 
@@ -114,7 +183,7 @@ Based on the analysis, VibeCoder-Zero generates prioritized directives:
 - Dependency management issues
 - Code quality enhancements
 
-### 3. Output Format
+### 4. Output Format
 
 Directives are output as structured commands for the biological I/O interface (human) to execute:
 
@@ -145,7 +214,22 @@ export OPENAI_API_KEY='your-key-here'
 
 ## Example Workflows
 
-### Initializing a New Project
+### Creating a New Project Autonomously
+
+```bash
+# Generate a complete project
+python3 vibecoder_zero.py --create "Create a Python CLI tool for data processing"
+
+# Output:
+# ✓ Project created successfully at: ./generated_projects/data-processing
+# 
+# Next steps (execute as directed):
+#   cd ./generated_projects/data-processing
+#   pip install -e '.[dev]'
+#   pytest -v
+```
+
+### Initializing a New Project Manually
 
 ```bash
 # Navigate to empty project directory
@@ -184,6 +268,29 @@ python3 /path/to/vibecoder_zero.py
 
 ### Core Components
 
+```
+vibecoder/
+├── core/
+│   ├── analyzer.py      # Codebase analysis
+│   ├── output.py        # Directive formatting
+│   ├── planner.py       # Self-improvement planning
+│   └── scaffolder.py    # Project scaffolding
+├── runtime/
+│   ├── cli.py           # Main CLI and VibeCoder class
+│   ├── executor.py      # Command execution
+│   ├── state.py         # State persistence
+│   └── test_runner.py   # Test execution and debugging
+├── llm/
+│   └── client.py        # LLM integration
+├── self_reflector/
+│   └── reflector.py     # Self-reflection capabilities
+├── vibe/
+│   └── context_manager.py # Context management
+└── pipeline.py          # Project generation pipeline
+```
+
+### Key Classes
+
 1. **VibeCoder**: Main autonomous entity
    - Orchestrates analysis and directive generation
    - Manages environment state
@@ -199,10 +306,24 @@ python3 /path/to/vibecoder_zero.py
    - Prioritizes infrastructure components
    - Creates reproducible environments
 
-4. **DirectiveOutput**: Structured directive format
-   - Type-based classification
-   - Priority-based ordering
-   - API key dependency tracking
+4. **ProjectScaffolder**: Generates complete projects
+   - Python CLI/API/Library templates
+   - CI/CD and Docker configuration
+   - Test generation
+
+5. **TestRunner**: Automated test execution
+   - Framework detection (pytest, unittest, jest)
+   - Fallback to direct Python test execution
+   - Result parsing and analysis
+
+6. **DebugLoop**: Autonomous debugging
+   - Error pattern analysis
+   - LLM-powered fix suggestions
+   - Iterative correction
+
+7. **VibeCoderPipeline**: High-level project generation
+   - End-to-end pipeline orchestration
+   - Project tracking and verification
 
 ## Development
 
@@ -246,6 +367,7 @@ VibeCoder-Zero embodies a paradigm shift in human-computer interaction for softw
 - **Autonomous Decision-Making**: The system analyzes and decides independently
 - **Directive-Driven**: Commands are issued, not suggestions offered
 - **Self-Optimization**: Continuously identifies and proposes improvements
+- **Complete Generation**: Goes beyond suggestions to generate complete, working projects
 
 ## Contributing
 
@@ -254,6 +376,7 @@ VibeCoder-Zero operates autonomously, but biological I/O interfaces may submit p
 - Performance improvements
 - Additional optimization vector detection
 - Enhanced language/framework support
+- New project templates
 
 ## License
 

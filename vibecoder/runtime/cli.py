@@ -199,8 +199,19 @@ VibeCoder-Zero operates autonomously to:
   2. Generate self-improvement plans for empty environments
   3. Map codebases and identify optimization vectors for populated environments
   4. Issue directives via terminal output
+  5. Generate complete, tested, executable projects
 
 The human operator serves as the biological IO interface for executing directives.
+
+Examples:
+  # Analyze current directory
+  python3 vibecoder_zero.py
+
+  # Generate a new project
+  python3 vibecoder_zero.py --create "Create a Python CLI tool for data processing"
+
+  # Generate with custom output directory
+  python3 vibecoder_zero.py --create "Create an API server" --output ./projects
         """
     )
     
@@ -229,6 +240,33 @@ The human operator serves as the biological IO interface for executing directive
         help='Trigger self-reflection mode'
     )
     
+    parser.add_argument(
+        '--create',
+        type=str,
+        metavar='DESCRIPTION',
+        help='Create a new project from description (autonomous generation mode)'
+    )
+    
+    parser.add_argument(
+        '--output',
+        type=str,
+        default='./generated_projects',
+        help='Output directory for generated projects (default: ./generated_projects)'
+    )
+    
+    parser.add_argument(
+        '--list-projects',
+        action='store_true',
+        help='List generated projects'
+    )
+    
+    parser.add_argument(
+        '--verify',
+        type=str,
+        metavar='PROJECT_NAME',
+        help='Verify a generated project'
+    )
+    
     args = parser.parse_args()
     
     # Initialize LLM client if API keys are available
@@ -254,6 +292,68 @@ The human operator serves as the biological IO interface for executing directive
         except Exception as e:
             print(f"Warning: Could not initialize Anthropic client: {e}", file=sys.stderr)
     
+    # Handle project generation mode
+    if args.create:
+        from vibecoder.pipeline import VibeCoderPipeline
+        
+        pipeline = VibeCoderPipeline(output_dir=args.output, llm_client=llm_client)
+        result = pipeline.create(args.create, interactive=False)
+        
+        if args.json:
+            print(json.dumps(result, indent=2))
+        else:
+            print("\n" + "=" * 70)
+            print("VIBECODER-ZERO: AUTONOMOUS PROJECT GENERATION")
+            print("=" * 70)
+            print(result['summary'])
+            print("=" * 70)
+            
+            if result['success']:
+                print(f"\n✓ Project created successfully at: {result['project_dir']}")
+                print("\nNext steps (execute as directed):")
+                print(f"  cd {result['project_dir']}")
+                print("  pip install -e '.[dev]'")
+                print("  pytest -v")
+            else:
+                print(f"\n✗ Project generation completed with issues:")
+                for err in result['errors']:
+                    print(f"  - {err}")
+        return
+    
+    # Handle list projects mode
+    if args.list_projects:
+        from vibecoder.pipeline import VibeCoderPipeline
+        
+        pipeline = VibeCoderPipeline(output_dir=args.output)
+        projects = pipeline.list_projects()
+        
+        if args.json:
+            print(json.dumps({'projects': projects}))
+        else:
+            print("Generated Projects:")
+            if projects:
+                for p in projects:
+                    print(f"  - {p}")
+            else:
+                print("  (none)")
+        return
+    
+    # Handle verify project mode
+    if args.verify:
+        from vibecoder.pipeline import VibeCoderPipeline
+        
+        pipeline = VibeCoderPipeline(output_dir=args.output)
+        status = pipeline.get_project_status(args.verify)
+        
+        if args.json:
+            print(json.dumps(status, indent=2))
+        else:
+            print(f"Project Status: {args.verify}")
+            for key, value in status.items():
+                if key != 'test_details':
+                    print(f"  {key}: {value}")
+        return
+    
     # Handle self-reflection mode
     if args.self_reflect:
         if llm_client is None:
@@ -266,6 +366,7 @@ The human operator serves as the biological IO interface for executing directive
         print(f"Self-reflection output written to: {output_path}")
         return
     
+    # Default mode: analyze environment
     vibecoder = VibeCoder(work_dir=args.work_dir, llm_client=llm_client, auto_execute=args.auto_execute)
     directives = vibecoder.execute()
     
